@@ -18,7 +18,7 @@ const startServer = async () => {
         await connectDB();
 
         server.listen(PORT, () => {
-            logger.info('_______________________________');
+            logger.info('__________________________________________');
             logger.info(`Nexora Backend server started`);
             logger.info(`  Port:        ${PORT}`);
             logger.info(`  Environment: ${process.env.NODE_ENV}`);

@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { messaging } = require('firebase-admin');
 const { version } = require('joi');
+const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 
@@ -15,6 +16,9 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended:true}));
+
+//routes
+app.use('/api/auth',authRoutes);
 
 
 app.get('/health',(req,res) => {
