@@ -8,8 +8,7 @@ const protect = async (req,res,next) => {
         //step1: check if token exists in request header
         const authHeader = req.headers.authorization;
         
-        console.log('Auth Header received:', authHeader);
-        console.log('JWT Secret:', process.env.JWT_SECRET);
+        
         if(!authHeader || !authHeader.startsWith('Bearer ')){
             return res.status(401).json({
                 success:false,

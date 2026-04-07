@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const { messaging } = require('firebase-admin');
 const { version } = require('joi');
 const authRoutes = require('./routes/auth.routes');
+const utilityRoutes = require('./routes/utility.routes');
+const qrRoutes = require('./routes/qr.routes');
 
 const app = express();
 
@@ -19,6 +21,9 @@ app.use(express.urlencoded({ extended:true}));
 
 //routes
 app.use('/api/auth',authRoutes);
+app.use('/api/utility',utilityRoutes);
+app.use('/api/qr',qrRoutes);
+
 
 
 app.get('/health',(req,res) => {
