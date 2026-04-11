@@ -7,7 +7,7 @@ const UtilityProfile = require('../models/UtilityProfile.model');
 const QRRecord = require('../models/QRRecord.model');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
-
+const BlockchainService = require('../services/blockchain.service');
 
 //POST/api/utility/submit
 const submitUtilityData = async (req,res) => {
@@ -94,18 +94,30 @@ const submitUtilityData = async (req,res) => {
             profileData,
             {upsert:true,new:true}
         );
+        //------step6: store hash on blockchain
+        let blockchainTxHash = 'pending';
+        try{
+            blockchainTxHash = await BlockchainService.storeHash(
+                userId.toString(),
+                dataHash
+            );
+            logger.info(`Blockchain TX:${blockchainTxHash}`);
+        } catch(blockchainError){
+            logger.error(`Blockchain error:${blockchainError.message}`);
+            blockchainTxHash = 'pending';
+        }
 
-        //-----step 6: generate QR token------------
+        //-----step 7: generate QR token------------
         const { token, iv:tokenIv} = QRService.generateToken(userId);
 
-        //-----step 7: assemble QR payload---------
+        //-----step 8: assemble QR payload---------
         //txRef is 'pending' until blockchain is integrated in phase 4
-        const payload = QRService.assemblePayload(token,'pending');
+        const payload = QRService.assemblePayload(token,blockchainTxHash);
 
-        //----step 8 : generate QR image------------
+        //----step 9 : generate QR image------------
         const qrImage = await QRService.generateQRImage(payload);
 
-        //----step 9 : Save qr record to mongoDB------------
+        //----step 10 : Save qr record to mongoDB------------
 
         await QRRecord.findOneAndUpdate(
             {userId},
@@ -115,19 +127,20 @@ const submitUtilityData = async (req,res) => {
                 qrEncryptedToken:token,
                 qrTokenIV:tokenIv,
                 selectedUtilities,
-                blockchainTxHash:'pending',
+                blockchainTxHash,
                 isExpired:false,
                 scanCount:0,
             },
             { upsert:true, new:true}
         );
         logger.info(`QR generated for user : ${userId}`);
-        //-----step 10 : Return QR image to frontend-------------
+        //-----step 11 : Return QR image to frontend-------------
         res.status(200).json({
             success:true,
             message:'QR Code generated successfully',
             qrImage, //base64 image string
             dataHash, //SHA-256 hash
+            blockchainTxHash,
             selectedUtilities,
         });
     } catch (error){

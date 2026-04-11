@@ -16,3 +16,9 @@ Thumbs.db
 # Logs
 logs/
 *.log
+
+# Hardhat auto-generated files
+blockchain/artifacts/
+blockchain/cache/
+blockchain/ignition/
+blockchain/test/Lock.js
