@@ -12,10 +12,13 @@ const app = express();
 
 app.use(helmet());//it adds security headers to every response
 app.use(cors({
-    origin:   process.env.CLIENT_URL || 'http://localhost:3000',
-    credentials:true,
+    origin: [
+        'http://localhost:3000', 
+        'http://127.0.0.1:5500', 
+        'http://localhost:5500'
+    ],
+    credentials: true,
 }));
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended:true}));
