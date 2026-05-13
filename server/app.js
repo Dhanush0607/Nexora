@@ -10,10 +10,7 @@ const qrRoutes = require('./routes/qr.routes');
 const app = express();
 
 app.use(helmet());//it adds security headers to every response
-app.use(cors({
-    origin:   process.env.CLIENT_URL || 'http://localhost:3000',
-    credentials:true,
-}));
+app.use(cors());
 
 
 app.use(express.json());
