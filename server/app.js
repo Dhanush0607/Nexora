@@ -7,7 +7,9 @@ const authRoutes = require('./routes/auth.routes');
 const utilityRoutes = require('./routes/utility.routes');
 const qrRoutes = require('./routes/qr.routes');
 const verifyRoutes = require('./routes/verify.routes');
-
+const emergencyRoutes = require('./routes/emergency.routes');
+const parkingRoutes = require('./routes/parking.routes');
+const knockknockRoutes = require('./routes/knockknock.routes');
 const app = express();
 
 app.use(helmet());//it adds security headers to every response
@@ -25,6 +27,9 @@ app.use('/api/auth',authRoutes);
 app.use('/api/utility',utilityRoutes);
 app.use('/api/qr',qrRoutes);
 app.use('/api/verify',verifyRoutes);
+app.use('/api/emergency',emergencyRoutes);
+app.use('/api/parking',parkingRoutes);
+app.use('/api/knockknock',knockknockRoutes);
 
 
 app.get('/health',(req,res) => {

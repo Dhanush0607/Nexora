@@ -22,3 +22,6 @@ blockchain/artifacts/
 blockchain/cache/
 blockchain/ignition/
 blockchain/test/Lock.js
+
+server/config/*.json
+server/config/nexora-firebase-key.json
