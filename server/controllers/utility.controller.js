@@ -8,12 +8,20 @@ const QRRecord = require('../models/QRRecord.model');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
 const BlockchainService = require('../services/blockchain.service');
+const { utilitySubmitSchema } = require('../validations/utility.validation');
 
 //POST/api/utility/submit
 const submitUtilityData = async (req,res) => {
+    const { error, value } = utilitySubmitSchema.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+            success: false,
+            message: error.details[0].message,
+        });
+    }
     try{
         const userId = req.user._id;
-        const { selectedUtilities,knockKnock,emergency,smartParking} = req.body;
+        const { selectedUtilities,knockKnock,emergency,smartParking} = value;
 
         //---step 1:Validate at least one utility selected---
         if(!selectedUtilities || selectedUtilities.length === 0){

@@ -10,6 +10,10 @@ const verifyRoutes = require('./routes/verify.routes');
 const emergencyRoutes = require('./routes/emergency.routes');
 const parkingRoutes = require('./routes/parking.routes');
 const knockknockRoutes = require('./routes/knockknock.routes');
+
+//middleware
+const { authLimiter, apiLimiter, verifyLimiter } = require('./middleware/rateLimiter');
+const { notFound,errorHandler} = require('./middleware/errorHandler');
 const app = express();
 
 app.use(helmet());//it adds security headers to every response
@@ -23,6 +27,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended:true}));
 
 //routes
+app.use('/api',apiLimiter);
 app.use('/api/auth',authRoutes);
 app.use('/api/utility',utilityRoutes);
 app.use('/api/qr',qrRoutes);
@@ -40,21 +45,9 @@ app.get('/health',(req,res) => {
         timestamp:new Date().toISOString(),
     });
 });
-//404 error handler
-app.use((req,res) => {
-    res.status(404).json({
-        success:false,
-        message:`Route ${req.originalUrl} not found`,
-    });
-});
-//global error handler
-app.use((err,req,res,next) => {
-    const statusCode = err.statusCode || 500;
-    res.status(statusCode).json({
-        success:false,
-        message:err.message || 'Internal server error',
-    });
-});
+// error handler
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
 
