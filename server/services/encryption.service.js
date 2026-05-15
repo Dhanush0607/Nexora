@@ -24,6 +24,15 @@ const EncryptionService = {
             ciphertext:ciphertext, // store this in mongoDB
         };
     },
+    // Encrypts using a provided IV (so we can decrypt later with same IV)
+    encryptWithIV(plainText, ivHex) {
+        const ivBuffer  = Buffer.from(ivHex, 'hex');
+        const cipher    = crypto.createCipheriv(ALGORITHM, KEY_BUFFER, ivBuffer);
+        let   ciphertext = cipher.update(String(plainText), 'utf8', 'hex');
+        ciphertext      += cipher.final('hex');
+        return ciphertext; // Only returns ciphertext — IV already known
+     },
+
 
     //Decrypts {iv,ciphertext}-> returns plain text
     //call this when showing data to varified scanner

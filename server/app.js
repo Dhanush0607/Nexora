@@ -6,12 +6,13 @@ const { version } = require('joi');
 const authRoutes = require('./routes/auth.routes');
 const utilityRoutes = require('./routes/utility.routes');
 const qrRoutes = require('./routes/qr.routes');
+const verifyRoutes = require('./routes/verify.routes');
 
 const app = express();
 
 app.use(helmet());//it adds security headers to every response
-app.use(cors());
 
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended:true}));
@@ -20,7 +21,7 @@ app.use(express.urlencoded({ extended:true}));
 app.use('/api/auth',authRoutes);
 app.use('/api/utility',utilityRoutes);
 app.use('/api/qr',qrRoutes);
-
+app.use('/api/verify',verifyRoutes);
 
 
 app.get('/health',(req,res) => {

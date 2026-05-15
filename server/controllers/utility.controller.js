@@ -40,47 +40,47 @@ const submitUtilityData = async (req,res) => {
         //Encrypt knockknock fieldsb
 
         if(selectedUtilities.includes('knockKnock') && knockKnock){
-            const label = EncryptionService.encrypt(knockKnock.sessionLabel || 'My Door');
-            const duration = EncryptionService.encrypt(knockKnock.sessionDuration || '10');
+            const encLabel    = EncryptionService.encryptWithIV(knockKnock.sessionLabel    || 'My Door', iv);
+            const encDuration = EncryptionService.encryptWithIV(knockKnock.sessionDuration || '10',      iv);
 
             profileData.knockKnock = {
-                encryptedSessionLabel:label.ciphertext,
-                encryptedSessionDuration:duration.ciphertext,
+                encryptedSessionLabel:    encLabel,
+                encryptedSessionDuration: encDuration,
             };
-            allCiphertexts += label.ciphertext + duration.ciphertext;
+            allCiphertexts += encLabel + encDuration;
+
         }
 
         //encrypt emergency fields
         if(selectedUtilities.includes('emergency') && emergency){
-            const name = EncryptionService.encrypt(emergency.name || '');
-            const age = EncryptionService.encrypt(emergency.age || '');
-            const blood = EncryptionService.encrypt(emergency.bloodGroup || '');
-            const contact = EncryptionService.encrypt(emergency.emergencyContact || '');
-            const notes = EncryptionService.encrypt(emergency.medicalNotes || '');
+            const encName    = EncryptionService.encryptWithIV(emergency.name             || '', iv);
+            const encAge     = EncryptionService.encryptWithIV(emergency.age              || '', iv);
+            const encBlood   = EncryptionService.encryptWithIV(emergency.bloodGroup       || '', iv);
+            const encContact = EncryptionService.encryptWithIV(emergency.emergencyContact || '', iv);
+            const encNotes   = EncryptionService.encryptWithIV(emergency.medicalNotes     || '', iv);
 
             profileData.emergency = {
-                encryptedName: name.ciphertext,
-                encryptedAge:age.ciphertext,
-                encryptedBloodGroup:blood.ciphertext,
-                encryptedEmergencyContact:contact.ciphertext,
-                encryptedMedicalNotes:notes.ciphertext,
-
+                encryptedName:             encName,
+                encryptedAge:              encAge,
+                encryptedBloodGroup:       encBlood,
+                encryptedEmergencyContact: encContact,
+                encryptedMedicalNotes:     encNotes,
             };
-            allCiphertexts += name.ciphertext + age.ciphertext + blood.ciphertext + contact.ciphertext + notes.ciphertext;
+            allCiphertexts += encName + encAge + encBlood + encContact + encNotes;
         }
 
         //Encrypt smart parking fields
         if(selectedUtilities.includes('smartParking') && smartParking){
-            const vehicle = EncryptionService.encrypt(smartParking.vehicleNumber || '');
-            const contact = EncryptionService.encrypt(smartParking.ownerContact || '');
-            const area = EncryptionService.encrypt(smartParking.parkingArea || '');
+            const encVehicle  = EncryptionService.encryptWithIV(smartParking.vehicleNumber || '', iv);
+            const encContact2 = EncryptionService.encryptWithIV(smartParking.ownerContact  || '', iv);
+            const encArea     = EncryptionService.encryptWithIV(smartParking.parkingArea   || '', iv);
 
             profileData.smartParking = {
-                encryptedVehicleNumber:vehicle.ciphertext,
-                encryptedOwnerContact:contact.ciphertext,
-                encryptedParkingArea:area.ciphertext,
+                encryptedVehicleNumber: encVehicle,
+                encryptedOwnerContact:  encContact2,
+                encryptedParkingArea:   encArea,
             };
-            allCiphertexts += vehicle.ciphertext + contact.ciphertext + area.ciphertext;
+            allCiphertexts += encVehicle + encContact2 + encArea;
         }
 
         //-----step 4: generate SHA-256 hash of all ciphertexts-----
