@@ -33,6 +33,29 @@ const Userschema = new mongoose.Schema(
             type:    Boolean,
             default: false,   // Regular users are NOT admin by default
         },
+        // For Google OAuth users, we store their Google ID and profile picture
+        googleId: {
+            type:   String,
+            sparse: true,  // Allows multiple null values
+             unique: true,
+        },
+
+        authProvider: {
+            type:    String,
+            enum:    ['local', 'google'],
+            default: 'local',
+        },
+
+        profilePicture: {
+            type:    String,
+            default: null,
+        },
+        resetPasswordToken:{
+            type:String,
+        },
+        resetPasswordExpires:{
+            type:Date,
+        }
     },
     {
         timestamps:true, // adds createdAt and updatedAt automatically
@@ -45,6 +68,7 @@ const Userschema = new mongoose.Schema(
 Userschema.pre('save',async function () {
     //Only hash if password was changed
     if(!this.isModified('passwordHash')) return ;
+    if(this.authProvider === 'google') return; // Skip hashing for Google users 
     this.passwordHash = await bcrypt.hash(this.passwordHash,12);
     
 });
