@@ -1,5 +1,6 @@
 //handles register, login,get profile
 
+const { isAdmin } = require('../middleware/adminMiddleware');
 const User = require('../models/User.model');
 const TokenService = require('../services/token.service');
 const Logger = require('../utils/logger');
@@ -51,6 +52,7 @@ const register = async (req,res) => {
                 _id:user._id,
                 fullName:user.fullName,
                 email:user.email,
+                isAdmin:user.isAdmin,
             },
         });
     }catch(error){
@@ -115,6 +117,7 @@ const login = async (req,res) => {
                 _id:user._id,
                 fullName:user.fullName,
                 email:user.email,
+                isAdmin:user.isAdmin,
             },
         });
 

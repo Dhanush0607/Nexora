@@ -10,7 +10,7 @@ const verifyRoutes = require('./routes/verify.routes');
 const emergencyRoutes = require('./routes/emergency.routes');
 const parkingRoutes = require('./routes/parking.routes');
 const knockknockRoutes = require('./routes/knockknock.routes');
-
+const adminRoutes = require('./routes/admin.routes');
 //middleware
 const { authLimiter, apiLimiter, verifyLimiter } = require('./middleware/rateLimiter');
 const { notFound,errorHandler} = require('./middleware/errorHandler');
@@ -35,7 +35,7 @@ app.use('/api/verify',verifyRoutes);
 app.use('/api/emergency',emergencyRoutes);
 app.use('/api/parking',parkingRoutes);
 app.use('/api/knockknock',knockknockRoutes);
-
+app.use('/api/admin',adminRoutes);
 
 app.get('/health',(req,res) => {
     res.status(200).json({

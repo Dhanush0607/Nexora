@@ -28,6 +28,11 @@ const Userschema = new mongoose.Schema(
         lastLogin:{
             type:Date,
         },
+        // Add inside UserSchema
+        isAdmin:{
+            type:    Boolean,
+            default: false,   // Regular users are NOT admin by default
+        },
     },
     {
         timestamps:true, // adds createdAt and updatedAt automatically
