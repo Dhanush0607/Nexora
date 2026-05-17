@@ -3,7 +3,7 @@
 const { isAdmin } = require('../middleware/adminMiddleware');
 const User = require('../models/User.model');
 const TokenService = require('../services/token.service');
-const Logger = require('../utils/logger');
+const logger = require('../utils/logger');
 const {
     registerSchema,
     loginSchema
@@ -270,11 +270,15 @@ const googleSignIn = async (req, res) => {
     });
 
   } catch (error) {
+    // Show full error details
+    console.error('FULL Google error:', error);
     logger.error(`Google sign-in error: ${error.message}`);
+    logger.error(`Stack: ${error.stack}`);
+  
     res.status(500).json({
       success: false,
-      message: 'Google sign-in failed. Please try again.',
-    });
+      message: error.message,  // ← Show actual error
+   });
   }
 };
 
@@ -309,7 +313,7 @@ const register = async (req,res) => {
         
         //step4-Issue JWT token
         const token = TokenService.issueToken(user._id);
-        Logger.info(`New user Registered:${email}`);
+        logger.info(`New user Registered:${email}`);
 
         //step 5 :send Response
         res.status(201).json({
@@ -324,7 +328,7 @@ const register = async (req,res) => {
             },
         });
     }catch(error){
-        Logger.error(`Register error:${error.message}`);
+        logger.error(`Register error:${error.message}`);
         res.status(500).json({
             success:false,
             message:'Registration failed.please try again',
@@ -374,7 +378,7 @@ const login = async (req,res) => {
         //step 5: Issue JWT token
         const token = TokenService.issueToken(user._id);
 
-        Logger.info(`User logged in: ${email}`);
+        logger.info(`User logged in: ${email}`);
 
         //step6: Send Response
         res.status(200).json({
@@ -390,7 +394,7 @@ const login = async (req,res) => {
         });
 
     } catch(error){
-        Logger.error(`Login error:${error.message}`);
+        logger.error(`Login error:${error.message}`);
         res.status(500).json({
             success:false,
             message:'Login failed.Please try again',

@@ -17,8 +17,38 @@ const { notFound,errorHandler} = require('./middleware/errorHandler');
 const app = express();
 
 app.use(helmet());//it adds security headers to every response
+// Required for Google Sign-In popup to work
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.setHeader('Permissions-Policy','identity-credentials-get=*');
+  next();
+});
 
-app.use(cors());
+// Replace existing cors setup with this
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow these origins
+    const allowedOrigins = [
+      'http://127.0.0.1:5500',
+      'http://localhost:5500',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:5000',
+
+    ];
+
+    // Allow requests with no origin (mobile apps, Thunder Client)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended:true}));
