@@ -761,7 +761,7 @@
                     <h2>Knock Knock</h2>
                     <p>Secure QR-based video calling without sharing personal contact details.</p>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                        <a class="open-btn" href="#">
+                        <a class="open-btn" href="#" id="openKnockBtn">
                             Open utility
                             <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                         </a>
@@ -903,6 +903,59 @@
             <button class="close-btn" id="closeProfileBtn">Close</button>
         </div>
     </div>
+    <div class="overlay" id="knockOverlay">
+    <div class="drawer">
+        <div class="drawer-handle"></div>
+        <h3>Knock Knock Settings</h3>
+        <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 1.5rem;">Configure your temporary WebRTC video session.</p>
+
+        <div id="knockSetupView">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Session Label</label>
+                <input type="text" id="kkLabel" placeholder="e.g., Dashboard QR" style="width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif;">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Duration (Minutes)</label>
+                <select id="kkDuration" style="width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; appearance: none;">
+                    <option value="5">5 Minutes</option>
+                    <option value="10" selected>10 Minutes</option>
+                    <option value="15">15 Minutes</option>
+                </select>
+            </div>
+
+            <button id="activateKnockBtn" style="width: 100%; padding: 12px; border-radius: var(--radius-sm); background: var(--blue); color: #fff; font-family: 'DM Sans', sans-serif; font-weight: 500; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Activate Session
+            </button>
+        </div>
+        <div id="knockActiveView" style="display: none; background: rgba(55,138,221,0.08); border: 1px solid var(--blue-border); padding: 1.5rem; border-radius: var(--radius-sm); margin-bottom: 20px; text-align: center;">
+    
+    <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+        <span class="card-tag-dot" style="background: var(--blue); width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 8px var(--blue);"></span>
+        <span style="font-size: 14px; font-weight: 500; color: var(--blue);">Session Active</span>
+    </div>
+
+    <div id="kkQrContainer" style="background: #fff; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;">
+        </div>
+    
+    <p style="font-size: 14px; color: var(--text); margin-bottom: 5px;"><strong id="activeKkLabel">...</strong></p>
+    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Expires at: <span id="activeKkExpiry">...</span></p>
+    
+    <div style="display: flex; gap: 10px;">
+        <button id="copyLinkBtn" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); border: 1px solid var(--border); font-family: 'DM Sans', sans-serif; font-size: 13.5px; cursor: pointer;">
+            Copy Link
+        </button>
+
+        <button id="endKnockBtn" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); background: rgba(226,75,74,0.1); color: var(--danger); border: 1px solid rgba(226,75,74,0.3); font-family: 'DM Sans', sans-serif; font-size: 13.5px; cursor: pointer; transition: all 0.2s;">
+            End Session
+        </button>
+    </div>
+</div>
+
+        <button class="close-btn" id="closeKnockBtn" style="margin-top: 15px;">Close</button>
+    </div>
+</div>
 
     <!-- QR overlay -->
     <div class="overlay qr-center" id="qrOverlay">
@@ -914,7 +967,7 @@
             <button class="close-btn" id="closeQRBtn">Close</button>
         </div>
     </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         const token = localStorage.getItem('token');
 
@@ -1099,6 +1152,99 @@
             localStorage.removeItem('user');
             window.location.href = 'login.html';
         });
+        /* ── Knock Knock Drawer Logic ── */
+const knockOverlay = document.getElementById('knockOverlay');
+const setupView = document.getElementById('knockSetupView');
+const activeView = document.getElementById('knockActiveView');
+let currentSessionToken = null;
+
+// Open the Drawer
+document.getElementById('openKnockBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    knockOverlay.classList.add('open');
+});
+
+// Close the Drawer
+document.getElementById('closeKnockBtn').addEventListener('click', () => knockOverlay.classList.remove('open'));
+knockOverlay.addEventListener('click', e => {
+    if (e.target === knockOverlay) knockOverlay.classList.remove('open');
+});
+
+// Activate Session (POST to backend)
+document.getElementById('activateKnockBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('activateKnockBtn');
+    const label = document.getElementById('kkLabel').value || 'My QR';
+    const duration = document.getElementById('kkDuration').value;
+
+    btn.textContent = 'Activating...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('http://localhost:5000/api/knockknock/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // Uses your existing JWT token variable
+            },
+            body: JSON.stringify({ sessionLabel: label, durationMinutes: parseInt(duration) })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentSessionToken = data.sessionToken;
+            
+            // Update UI to Active State
+            setupView.style.display = 'none';
+            activeView.style.display = 'block';
+            document.getElementById('activeKkLabel').textContent = data.sessionLabel;
+            
+            // Format expiry time
+            const expiryDate = new Date(data.expiresAt);
+            document.getElementById('activeKkExpiry').textContent = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            // Optional: If you are embedding the session link into the QR, 
+            // you would trigger your QR generation module update here.
+        } else {
+            alert(data.message || 'Failed to create session');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Server error while activating Knock Knock.');
+    } finally {
+        btn.innerHTML = 'Activate Session';
+        btn.disabled = false;
+    }
+});
+
+// End Session (POST to backend)
+document.getElementById('endKnockBtn').addEventListener('click', async () => {
+    if (!currentSessionToken) return;
+
+    try {
+        const response = await fetch('http://localhost:5000/api/knockknock/end', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ sessionToken: currentSessionToken })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // Reset UI back to Setup State
+            currentSessionToken = null;
+            activeView.style.display = 'none';
+            setupView.style.display = 'block';
+            document.getElementById('kkLabel').value = '';
+        }
+    } catch (err) {
+        console.error('Error ending session:', err);
+    }
+});
     </script>
+    
 </body>
 </html>
