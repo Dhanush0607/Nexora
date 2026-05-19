@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexora — Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after {
@@ -931,27 +932,27 @@
         </div>
         <div id="knockActiveView" style="display: none; background: rgba(55,138,221,0.08); border: 1px solid var(--blue-border); padding: 1.5rem; border-radius: var(--radius-sm); margin-bottom: 20px; text-align: center;">
     
-    <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 15px;">
-        <span class="card-tag-dot" style="background: var(--blue); width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 8px var(--blue);"></span>
-        <span style="font-size: 14px; font-weight: 500; color: var(--blue);">Session Active</span>
-    </div>
+            <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                <span class="card-tag-dot" style="background: var(--blue); width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 8px var(--blue);"></span>
+                <span style="font-size: 14px; font-weight: 500; color: var(--blue);">Session Active</span>
+            </div>
 
-    <div id="kkQrContainer" style="background: #fff; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;">
+            <div id="kkQrContainer" style="background: #fff; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;">
+            </div>
+    
+            <p style="font-size: 14px; color: var(--text); margin-bottom: 5px;"><strong id="activeKkLabel">...</strong></p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Expires at: <span id="activeKkExpiry">...</span></p>
+    
+            <div style="display: flex; gap: 10px;">
+                <button id="copyLinkBtn" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); border: 1px solid var(--border); font-family: 'DM Sans', sans-serif; font-size: 13.5px; cursor: pointer;">
+                    Copy Link
+                </button>
+
+                <button id="endKnockBtn" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); background: rgba(226,75,74,0.1); color: var(--danger); border: 1px solid rgba(226,75,74,0.3); font-family: 'DM Sans', sans-serif; font-size: 13.5px; cursor: pointer; transition: all 0.2s;">
+                     End Session
+                </button>
+            </div>
         </div>
-    
-    <p style="font-size: 14px; color: var(--text); margin-bottom: 5px;"><strong id="activeKkLabel">...</strong></p>
-    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Expires at: <span id="activeKkExpiry">...</span></p>
-    
-    <div style="display: flex; gap: 10px;">
-        <button id="copyLinkBtn" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); border: 1px solid var(--border); font-family: 'DM Sans', sans-serif; font-size: 13.5px; cursor: pointer;">
-            Copy Link
-        </button>
-
-        <button id="endKnockBtn" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); background: rgba(226,75,74,0.1); color: var(--danger); border: 1px solid rgba(226,75,74,0.3); font-family: 'DM Sans', sans-serif; font-size: 13.5px; cursor: pointer; transition: all 0.2s;">
-            End Session
-        </button>
-    </div>
-</div>
 
         <button class="close-btn" id="closeKnockBtn" style="margin-top: 15px;">Close</button>
     </div>
@@ -960,14 +961,14 @@
     <!-- QR overlay -->
     <div class="overlay qr-center" id="qrOverlay">
         <div class="qr-modal">
-            <h3>Your QR code</h3>
-            <p>Share this to receive a Knock Knock call</p>
+            <h3 id="qrModalTitle">Your QR code</h3>
+            <p id="qrModalDesc">Share this to receive a Knock Knock call</p>
             <div class="qr-placeholder" id="qrPlaceholder">Fetching QR…</div>
             <img id="qrImage" alt="Your QR code">
             <button class="close-btn" id="closeQRBtn">Close</button>
         </div>
     </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <script>
         const token = localStorage.getItem('token');
 
@@ -1044,40 +1045,48 @@
         });
 
         /* ── Load QR ── */
-        document.getElementById('loadQRBtn').addEventListener('click', async () => {
+        document.getElementById('loadQRBtn').addEventListener('click', () => {
             const overlay     = document.getElementById('qrOverlay');
             const placeholder = document.getElementById('qrPlaceholder');
             const qrImg       = document.getElementById('qrImage');
 
             overlay.classList.add('open');
-            placeholder.textContent = 'Fetching QR…';
-            placeholder.classList.remove('hidden');
-            qrImg.classList.remove('loaded');
 
-            try {
-                const response = await fetch('http://localhost:5000/api/qr/my-qr', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+            // Check if there's an active Knock Knock session QR
+            const kkContainer = document.getElementById('kkQrContainer');
+            const activeQRImg = kkContainer ? kkContainer.querySelector('img') : null;
+            document.getElementById('qrModalTitle').textContent = "knock knock QR code";
+            document.getElementById('qrModalDesc').textContent = "Share this to receive a Knock Knock call";
+            if (activeQRImg && activeQRImg.src) {
+                // ✅ Show the active session QR
+                placeholder.classList.add('hidden');
+                qrImg.src           = activeQRImg.src;
+                qrImg.style.display = 'block';
+                qrImg.classList.add('loaded');
 
-                const data = await response.json();
-                console.log(data);
-
-                if (data.qrUrl) {
-                    qrImg.src = data.qrUrl;
-                    qrImg.onload = () => {
-                        placeholder.classList.add('hidden');
-                        qrImg.classList.add('loaded');
-                    };
-                } else {
-                    placeholder.textContent = data.message || 'QR not available';
-                }
-
-            } catch (err) {
-                console.error(err);
-                placeholder.textContent = 'Server error. Try again.';
+            } else {
+                // ❌ No active session — prompt user to create one
+                placeholder.classList.remove('hidden');
+                qrImg.style.display = 'none';
+                qrImg.classList.remove('loaded');
+                placeholder.innerHTML = `
+                    <div style="text-align:center; padding: 10px;">
+                        <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+                            No active session.<br/>
+                            Open Knock Knock utility and activate a session first.
+                        </div>
+                        <button onclick="
+                            document.getElementById('qrOverlay').classList.remove('open');
+                            document.getElementById('openKnockBtn').click();"
+                            style="padding:9px 18px; background:var(--blue); color:#fff;
+                                border:none; border-radius:var(--radius-sm);
+                                font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer;">
+                            Open Knock Knock
+                        </button>
+                    </div>
+                `;
             }
         });
-
         document.getElementById('closeQRBtn').addEventListener('click', () => {
             document.getElementById('qrOverlay').classList.remove('open');
         });
@@ -1172,47 +1181,83 @@ knockOverlay.addEventListener('click', e => {
 
 // Activate Session (POST to backend)
 document.getElementById('activateKnockBtn').addEventListener('click', async () => {
-    const btn = document.getElementById('activateKnockBtn');
-    const label = document.getElementById('kkLabel').value || 'My QR';
+    const btn      = document.getElementById('activateKnockBtn');
+    const label    = document.getElementById('kkLabel').value || 'My QR';
     const duration = document.getElementById('kkDuration').value;
 
     btn.textContent = 'Activating...';
-    btn.disabled = true;
+    btn.disabled    = true;
 
     try {
         const response = await fetch('http://localhost:5000/api/knockknock/create', {
-            method: 'POST',
+            method:  'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // Uses your existing JWT token variable
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ sessionLabel: label, durationMinutes: parseInt(duration) })
+            body: JSON.stringify({
+                sessionLabel:    label,
+                durationMinutes: parseInt(duration)
+            })
         });
 
         const data = await response.json();
+        console.log('Full session data:', data);
 
         if (data.success) {
             currentSessionToken = data.sessionToken;
-            
-            // Update UI to Active State
+
+            // ── Switch views ──
             setupView.style.display = 'none';
             activeView.style.display = 'block';
+
+            // ── Update labels ──
             document.getElementById('activeKkLabel').textContent = data.sessionLabel;
-            
-            // Format expiry time
             const expiryDate = new Date(data.expiresAt);
-            document.getElementById('activeKkExpiry').textContent = expiryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
-            // Optional: If you are embedding the session link into the QR, 
-            // you would trigger your QR generation module update here.
+            document.getElementById('activeKkExpiry').textContent =
+                expiryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // ── Show QR image from backend ──────────────────
+            const qrContainer = document.getElementById('kkQrContainer');
+            qrContainer.innerHTML = '';     // Clear old content
+            console.log('qrContainer found:', qrContainer);
+            console.log('data.qrImage exists:', !!data.qrImage);
+            console.log('activeView display:', activeView.style.display);
+            if (data.qrImage) {
+                const img        = document.createElement('img');
+                img.src          = data.qrImage;   // base64 PNG from backend
+                img.style.width  = '200px';
+                img.style.height = '200px';
+                img.style.display        = 'block';
+                img.style.borderRadius   = '8px';
+                img.style.margin         = '0 auto';
+
+                img.onload = () => console.log('QR image loaded successfully');
+                img.onerror = () => console.log('Qr image failed to load');
+
+                qrContainer.appendChild(img);
+                console.log('QR image appended to container');
+            } else {
+                console.log('No qrImage in data');
+;               qrContainer.textContent = 'QR not available';
+            }
+
+            // ── Store session link for copy button ──────────
+            qrContainer.dataset.sessionLink = data.sessionLink;
+
         } else {
             alert(data.message || 'Failed to create session');
         }
+
     } catch (err) {
         console.error(err);
         alert('Server error while activating Knock Knock.');
     } finally {
-        btn.innerHTML = 'Activate Session';
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            Activate Session`;
         btn.disabled = false;
     }
 });
@@ -1239,10 +1284,45 @@ document.getElementById('endKnockBtn').addEventListener('click', async () => {
             activeView.style.display = 'none';
             setupView.style.display = 'block';
             document.getElementById('kkLabel').value = '';
+
+            document.getElementById('kkQrContainer').innerHTML = '';
         }
     } catch (err) {
         console.error('Error ending session:', err);
     }
+});
+
+// Copy Session Link
+document.getElementById('copyLinkBtn').addEventListener('click', () => {
+    const qrContainer = document.getElementById('kkQrContainer');
+    const sessionLink = qrContainer.dataset.sessionLink;
+
+    if (!sessionLink) {
+        alert('Session link not available');
+        return;
+    }
+
+    navigator.clipboard.writeText(sessionLink).then(() => {
+        const btn          = document.getElementById('copyLinkBtn');
+        const originalText = btn.textContent;
+        btn.textContent    = 'Copied! ✓';
+        btn.style.background = 'rgba(62, 207, 142, 0.1)';
+        btn.style.color      = 'var(--success)';
+        setTimeout(() => {
+            btn.textContent      = originalText;
+            btn.style.background = 'var(--surface2)';
+            btn.style.color      = 'var(--text)';
+        }, 2000);
+    }).catch(() => {
+        // Fallback for browsers that block clipboard
+        const input = document.createElement('input');
+        input.value = sessionLink;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        alert('Link copied!');
+    });
 });
     </script>
     
