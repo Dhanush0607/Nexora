@@ -189,6 +189,7 @@
 
         try {
             // Note: You must ensure this endpoint exists in your emergency.routes.js
+            const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:5000/api/emergency/save', {
                 method: 'POST',
                 headers: {
@@ -218,6 +219,19 @@
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
                 });
+                setTimeout(() => {
+
+                    const qrImg = qrContainer.querySelector('img');
+
+                    if (qrImg) {
+
+                        localStorage.setItem(
+                            'emergencyQR',
+                            qrImg.src
+                        );
+                    }
+
+                }, 300);
 
                 document.getElementById('qrResult').style.display = 'block';
                 btn.textContent = 'Update Profile';
@@ -233,6 +247,46 @@
             btn.disabled = false;
         }
     });
+    window.addEventListener('DOMContentLoaded', async () => {
+
+    try {
+
+        const token = localStorage.getItem('token');
+
+        const response = await fetch(
+            'http://localhost:5000/api/emergency/my-profile',
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+
+            document.getElementById('name').value =
+                data.emergency.name || '';
+
+            document.getElementById('age').value =
+                data.emergency.age || '';
+
+            document.getElementById('bloodGroup').value =
+                data.emergency.bloodGroup || '';
+
+            document.getElementById('emergencyContact').value =
+                data.emergency.emergencyContact || '';
+
+            document.getElementById('medicalNotes').value =
+                data.emergency.medicalNotes || '';
+        }
+
+    } catch (error) {
+
+        console.log(error);
+    }
+});
 </script>
 </body>
 </html>

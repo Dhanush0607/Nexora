@@ -80,4 +80,149 @@ const getEmergencyProfile = async (req, res) => {
   }
 };
 
-module.exports = { getEmergencyProfile };
+const saveEmergencyProfile = async (req, res) => {
+
+  try {
+
+    const {
+      name,
+      age,
+      bloodGroup,
+      emergencyContact,
+      medicalNotes
+    } = req.body;
+
+    const userId = req.user.id;
+
+    // ── Step 1: Find existing profile ─────────────────────
+    let profile = await UtilityProfile.findOne({ userId });
+
+    // ── Step 2: Create profile if not exists ──────────────
+    if (!profile) {
+
+      const iv = EncryptionService.generateIV();
+
+      profile = new UtilityProfile({
+        userId,
+        iv,
+        selectedUtilities: ['emergency'],
+      });
+
+    }
+
+    // ── Step 3: Encrypt emergency fields ──────────────────
+    profile.emergency = {
+      encryptedName: EncryptionService.encryptWithIV(
+        name,
+        profile.iv
+
+      ),
+
+      encryptedAge: EncryptionService.encryptWithIV(
+        age.toString(),
+        profile.iv
+      ),
+
+      encryptedBloodGroup: EncryptionService.encryptWithIV(
+        bloodGroup,
+        profile.iv
+      ),
+
+      encryptedEmergencyContact: EncryptionService.encryptWithIV(
+        emergencyContact,
+        profile.iv
+      ),
+
+      encryptedMedicalNotes: EncryptionService.encryptWithIV(
+        medicalNotes,
+        profile.iv
+      ),
+    };
+
+    // ── Step 4: Ensure utility enabled ────────────────────
+    if (!profile.selectedUtilities.includes('emergency')) {
+
+      profile.selectedUtilities.push('emergency');
+    }
+
+    // ── Step 5: Save profile ──────────────────────────────
+    await profile.save();
+
+    logger.info(`Emergency profile saved for user: ${userId}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Emergency profile saved successfully.',
+    });
+
+  } catch (error) {
+
+    logger.error(`Emergency save error: ${error.message}`);
+
+    res.status(500).json({
+      success: false,
+      message: 'Could not save emergency profile.',
+    });
+  }
+};
+
+const getMyEmergencyProfile = async (req, res) => {
+
+  try {
+
+    const userId = req.user.id;
+
+    const profile = await UtilityProfile.findOne({ userId });
+
+    if (!profile || !profile.emergency) {
+
+      return res.status(404).json({
+        success: false,
+        message: 'No emergency profile found.'
+      });
+    }
+
+    const emergency = {
+      name: EncryptionService.decrypt(
+        profile.iv,
+        profile.emergency.encryptedName
+      ),
+
+      age: EncryptionService.decrypt(
+        profile.iv,
+        profile.emergency.encryptedAge
+      ),
+
+      bloodGroup: EncryptionService.decrypt(
+        profile.iv,
+        profile.emergency.encryptedBloodGroup
+      ),
+
+      emergencyContact: EncryptionService.decrypt(
+        profile.iv,
+        profile.emergency.encryptedEmergencyContact
+      ),
+
+      medicalNotes: EncryptionService.decrypt(
+        profile.iv,
+        profile.emergency.encryptedMedicalNotes
+      ),
+    };
+
+    res.status(200).json({
+      success: true,
+      emergency
+    });
+
+  } catch (error) {
+
+    logger.error(`Get my emergency profile error: ${error.message}`);
+
+    res.status(500).json({
+      success: false,
+      message: 'Could not retrieve profile.'
+    });
+  }
+};
+
+module.exports = { getEmergencyProfile, saveEmergencyProfile, getMyEmergencyProfile };

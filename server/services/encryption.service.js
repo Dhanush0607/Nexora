@@ -8,41 +8,84 @@ const SECRET_KEY = process.env.AES_SECRET_KEY; //MUST BE 32 CHARACTERS
 const KEY_BUFFER = Buffer.from(SECRET_KEY);//convert to buffer
 
 
+const generateIV = () => {
+    return crypto.randomBytes(16).toString('hex');
+};
+
 const EncryptionService = {
 
-    //Encryption plain text -> returns {iv ,ciphertext}
-    //call this before saving any sensitive data to mongoDB
-    encrypt(plainText){
-        //Generate a random IV for every encryption
+    generateIV() {
+        return crypto.randomBytes(16).toString('hex');
+    },
+
+    // Encryption plain text
+    encrypt(plainText) {
+
         const iv = crypto.randomBytes(16);
-        const cipher = crypto.createCipheriv(ALGORITHM,KEY_BUFFER,iv);
-        let ciphertext = cipher.update(String(plainText),'utf8','hex');
+
+        const cipher = crypto.createCipheriv(
+            ALGORITHM,
+            KEY_BUFFER,
+            iv
+        );
+
+        let ciphertext = cipher.update(
+            String(plainText),
+            'utf8',
+            'hex'
+        );
+
         ciphertext += cipher.final('hex');
 
-        return{
-            iv : iv.toString('hex'), //store this in mongoDB
-            ciphertext:ciphertext, // store this in mongoDB
+        return {
+            iv: iv.toString('hex'),
+            ciphertext
         };
     },
-    // Encrypts using a provided IV (so we can decrypt later with same IV)
+
+    // Encrypt using existing IV
     encryptWithIV(plainText, ivHex) {
-        const ivBuffer  = Buffer.from(ivHex, 'hex');
-        const cipher    = crypto.createCipheriv(ALGORITHM, KEY_BUFFER, ivBuffer);
-        let   ciphertext = cipher.update(String(plainText), 'utf8', 'hex');
-        ciphertext      += cipher.final('hex');
-        return ciphertext; // Only returns ciphertext — IV already known
-     },
 
+        const ivBuffer = Buffer.from(ivHex, 'hex');
 
-    //Decrypts {iv,ciphertext}-> returns plain text
-    //call this when showing data to varified scanner
-    decrypt(iv,ciphertext){
-        const ivBuffer = Buffer.from(iv,'hex');
-        const decipher = crypto.createDecipheriv(ALGORITHM,KEY_BUFFER,ivBuffer);
-        let plainText = decipher.update(ciphertext,'hex','utf8');
+        const cipher = crypto.createCipheriv(
+            ALGORITHM,
+            KEY_BUFFER,
+            ivBuffer
+        );
+
+        let ciphertext = cipher.update(
+            String(plainText),
+            'utf8',
+            'hex'
+        );
+
+        ciphertext += cipher.final('hex');
+
+        return ciphertext;
+    },
+
+    // Decrypt
+    decrypt(iv, ciphertext) {
+
+        const ivBuffer = Buffer.from(iv, 'hex');
+
+        const decipher = crypto.createDecipheriv(
+            ALGORITHM,
+            KEY_BUFFER,
+            ivBuffer
+        );
+
+        let plainText = decipher.update(
+            ciphertext,
+            'hex',
+            'utf8'
+        );
+
         plainText += decipher.final('utf8');
+
         return plainText;
     },
- };
+};
 
- module.exports = EncryptionService;
+module.exports = EncryptionService;
