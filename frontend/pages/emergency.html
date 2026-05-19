@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexora — Emergency Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* Nexora Dark Theme */
+        :root {
+            --bg: #0f0f13;
+            --surface: #17171f;
+            --surface2: #1e1e28;
+            --border: rgba(255,255,255,0.07);
+            --text: #f0f0f5;
+            --text-muted: #7b7b8f;
+            --red: #E24B4A;
+            --success: #3ecf8e;
+            --radius: 14px;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'DM Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            padding: 2rem 1rem; 
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+        }
+        
+        .container { 
+            background: var(--surface); 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius); 
+            padding: 2.5rem 2rem; 
+            max-width: 500px; 
+            width: 100%; 
+            height: fit-content;
+        }
+        
+        h1 { 
+            font-family: 'DM Serif Display', serif; 
+            font-size: 28px; 
+            margin-bottom: 5px; 
+            color: var(--red); 
+        }
+        
+        p.subtitle { 
+            color: var(--text-muted); 
+            font-size: 14px; 
+            margin-bottom: 2rem; 
+        }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        input, textarea, select { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 8px; 
+            background: var(--surface2); 
+            border: 1px solid var(--border); 
+            color: var(--text); 
+            font-family: 'DM Sans', sans-serif; 
+        }
+        
+        .btn { 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 8px; 
+            background: var(--red); 
+            color: white; 
+            border: none; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: opacity 0.2s; 
+            font-family: 'DM Sans', sans-serif; 
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        .btn:hover { opacity: 0.9; }
+
+        /* QR Result Section */
+        #qrResult { 
+            display: none; 
+            text-align: center; 
+            margin-top: 2rem; 
+            padding-top: 2rem; 
+            border-top: 1px solid var(--border); 
+        }
+        #qrcode { 
+            display: inline-block; 
+            background: white; 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 1rem; 
+        }
+        
+        .back-link { 
+            display: inline-block; 
+            margin-top: 1.5rem; 
+            color: var(--text-muted); 
+            text-decoration: none; 
+            font-size: 14px; 
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--text); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Emergency Profile</h1>
+    <p class="subtitle">Securely store your medical details to generate an emergency QR code.</p>
+
+    <form id="emergencyForm">
+        <div class="form-group">
+            <label>Full Legal Name</label>
+            <input type="text" id="name" required placeholder="e.g. John Doe">
+        </div>
+        
+        <div style="display: flex; gap: 15px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Age</label>
+                <input type="number" id="age" required placeholder="e.g. 30">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Blood Group</label>
+                <select id="bloodGroup" required>
+                    <option value="">Select...</option>
+                    <option value="A+">A+</option><option value="A-">A-</option>
+                    <option value="B+">B+</option><option value="B-">B-</option>
+                    <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                    <option value="O+">O+</option><option value="O-">O-</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Emergency Contact (Name & Phone)</label>
+            <input type="text" id="emergencyContact" required placeholder="e.g. Jane Doe: +91 98765 43210">
+        </div>
+
+        <div class="form-group">
+            <label>Medical Notes (Allergies, Conditions, etc.)</label>
+            <textarea id="medicalNotes" rows="3" placeholder="e.g. Penicillin allergy, Type 1 Diabetic..."></textarea>
+        </div>
+
+        <button type="submit" class="btn" id="saveBtn">Encrypt & Save Profile</button>
+    </form>
+
+    <div id="qrResult">
+        <h3 style="color: var(--success); margin-bottom: 10px;">Profile Secured!</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Print this QR code or save it as your phone lock screen.</p>
+        <div id="qrcode"></div>
+    </div>
+
+    <div style="text-align: center;">
+        <a href="../dashboard.html" class="back-link">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+    // Ensure user is logged in
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token) {
+        window.location.href = '../login.html';
+    }
+
+    document.getElementById('emergencyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('saveBtn');
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        // Build payload matching the 5 backend fields
+        const payload = {
+            name: document.getElementById('name').value,
+            age: document.getElementById('age').value,
+            bloodGroup: document.getElementById('bloodGroup').value,
+            emergencyContact: document.getElementById('emergencyContact').value,
+            medicalNotes: document.getElementById('medicalNotes').value || 'None'
+        };
+
+        try {
+            // Note: You must ensure this endpoint exists in your emergency.routes.js
+            const response = await fetch('http://localhost:5000/api/emergency/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Generate the QR link. We use the user's ID to fetch the profile later.
+                // Assuming your auth response stores the user ID as user._id or user.id
+                const userId = user._id || user.id;
+                const qrLink = `http://localhost:3000/pages/emergency-view.html?userId=${userId}`;
+
+                // Generate Red Emergency QR Code
+                const qrContainer = document.getElementById('qrcode');
+                qrContainer.innerHTML = ''; 
+                
+                new QRCode(qrContainer, {
+                    text: qrLink,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#E24B4A", // Emergency Red
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                document.getElementById('qrResult').style.display = 'block';
+                btn.textContent = 'Update Profile';
+            } else {
+                alert(data.message || 'Failed to save profile');
+                btn.textContent = 'Encrypt & Save Profile';
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Failed to connect to server.");
+            btn.textContent = 'Encrypt & Save Profile';
+        } finally {
+            btn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

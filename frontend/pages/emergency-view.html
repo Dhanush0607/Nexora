@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexora — Emergency Info</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Bright, high-contrast theme for outdoor/panic visibility */
+        body { 
+            font-family: 'DM Sans', sans-serif; 
+            background: #f4f4f5; 
+            color: #111; 
+            margin: 0; 
+            padding: 0; 
+        }
+        
+        .header { 
+            background: #E24B4A; 
+            color: white; 
+            text-align: center; 
+            padding: 2rem 1rem 3rem; /* Extra padding at bottom for overlap */
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 24px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
+        .header p { 
+            margin: 5px 0 0; 
+            font-size: 14px; 
+            opacity: 0.9; 
+        }
+        
+        .container { 
+            max-width: 600px; 
+            margin: -30px auto 2rem; /* Overlaps the red header slightly */
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            padding: 2rem; 
+            position: relative; 
+            z-index: 10; 
+            width: 90%; 
+        }
+        
+        .data-group { 
+            margin-bottom: 1.5rem; 
+            border-bottom: 1px solid #eee; 
+            padding-bottom: 1.25rem; 
+        }
+        .data-group:last-child { 
+            border-bottom: none; 
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        
+        .label { 
+            font-size: 12px; 
+            color: #666; 
+            text-transform: uppercase; 
+            font-weight: 700; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 6px; 
+        }
+        
+        .value { 
+            font-size: 18px; 
+            font-weight: 500; 
+            color: #111; 
+            line-height: 1.5;
+        }
+        
+        .blood-type-badge { 
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+            background: #E24B4A; 
+            color: white; 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            font-size: 22px; 
+            box-shadow: 0 4px 10px rgba(226,75,74,0.3);
+        }
+        
+        .call-btn { 
+            display: block; 
+            width: 100%; 
+            text-align: center; 
+            background: #3ecf8e; 
+            color: white; 
+            text-decoration: none; 
+            padding: 15px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            font-size: 18px; 
+            margin-top: 15px; 
+            transition: background 0.2s;
+        }
+        .call-btn:active { transform: scale(0.98); }
+        
+        #loading { text-align: center; padding: 4rem 2rem; color: #666; font-size: 16px; }
+        #content { display: none; }
+        
+        .alert-text { color: #E24B4A; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Medical Emergency</h1>
+    <p>Vital Information Enclosed</p>
+</div>
+
+<div id="loading">Decrypting data securely...</div>
+
+<div class="container" id="content">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+        <div>
+            <div class="label">Patient Name & Age</div>
+            <div class="value" id="valName" style="font-size: 24px; font-weight: 700;">...</div>
+        </div>
+        <div class="blood-type-badge" id="valBlood">...</div>
+    </div>
+
+    <div class="data-group">
+        <div class="label">Medical Notes (Conditions & Allergies)</div>
+        <div class="value alert-text" id="valNotes">...</div>
+    </div>
+
+    <div class="data-group" style="background: #fdf5f5; padding: 1.5rem; border-radius: 10px; border: 1px solid rgba(226,75,74,0.2);">
+        <div class="label" style="color: #E24B4A;">Primary Emergency Contact</div>
+        <div class="value" id="valContactName" style="font-weight: 700;">...</div>
+        <a href="#" id="callBtn" class="call-btn">
+            Tap to Call Contact
+        </a>
+    </div>
+</div>
+
+<script>
+    // Extract userId from URL (e.g., ?userId=1234567890abcdef)
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUserId = urlParams.get('userId');
+
+    if (!targetUserId) {
+        document.getElementById('loading').innerHTML = "<b>Invalid QR Code</b><br><br>No user identification found in the link.";
+    } else {
+        fetchProfile();
+    }
+
+    async function fetchProfile() {
+        try {
+            // This matches the GET route defined in your emergency.controller.js
+            const response = await fetch(`http://localhost:5000/api/emergency/profile/${targetUserId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                // The controller returns the decrypted data inside the 'emergency' object
+                const p = data.emergency; 
+                
+                // Inject the decrypted data into the HTML
+                document.getElementById('valName').textContent = `${p.name}, Age ${p.age}`;
+                document.getElementById('valBlood').textContent = p.bloodGroup;
+                
+                // If medical notes are empty, show 'None' to reassure the paramedic
+                document.getElementById('valNotes').textContent = p.medicalNotes || "No specific conditions or allergies reported.";
+                
+                document.getElementById('valContactName').textContent = p.emergencyContact;
+
+                // Extract phone number using regex if they entered it like "Name: +123456"
+                // Or just set the whole string if they only entered a number
+                const phoneMatch = p.emergencyContact.match(/[\+\d\-\s]+/g);
+                if (phoneMatch) {
+                    // Grab the longest number-like string found
+                    const phoneNumber = phoneMatch.sort((a,b) => b.length - a.length)[0].trim();
+                    document.getElementById('callBtn').href = `tel:${phoneNumber}`;
+                } else {
+                    // Fallback
+                    document.getElementById('callBtn').style.display = 'none';
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            } else {
+                document.getElementById('loading').innerHTML = `<b>Error</b><br><br>${data.message}`;
+            }
+        } catch (error) {
+            document.getElementById('loading').innerHTML = "<b>Network Error</b><br><br>Could not load medical data. Please check your internet connection.";
+        }
+    }
+</script>
+
+</body>
+</html>
