@@ -42,7 +42,12 @@ form.addEventListener("submit", async (e) => {
 
             showMessage("Login successful", "success");
 
-            window.location.href = "dashboard.html";
+            // Redirect admin users to admin panel
+            if (data.user.isAdmin) {
+                window.location.href = "admin/admin.html";
+            } else {
+                window.location.href = "dashboard.html";
+            }
 
         } else {
 
