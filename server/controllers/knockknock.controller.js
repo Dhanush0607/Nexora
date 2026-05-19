@@ -2,6 +2,7 @@
 // Manages WebRTC session creation, joining, and ending
 
 const SessionService = require('../services/session.service');
+const QRService      = require('../services/qr.service');
 const logger         = require('../utils/logger');
 
 // POST /api/knockknock/create
@@ -18,7 +19,10 @@ const createSession = async (req, res) => {
     );
 
     // Session link shared with visitor
-    const sessionLink = `${process.env.CLIENT_URL}/pages/knockknock.html?token=${session.sessionToken}`;
+    const sessionLink = `${process.env.CLIENT_URL}/frontend/knockknock.html?token=${session.sessionToken}`;
+
+    // Generate QR code from session link
+    const qrImage = await QRService.generateQRImage(sessionLink);
 
     logger.info(`KnockKnock session created for user: ${userId}`);
 
@@ -30,6 +34,7 @@ const createSession = async (req, res) => {
       sessionLabel: session.sessionLabel,
       expiresAt:    session.expiresAt,
       durationMinutes: session.durationMinutes,
+      qrImage,
     });
 
   } catch (error) {
