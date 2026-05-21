@@ -701,6 +701,10 @@
     <nav class="topbar">
         <div class="brand">Nexo<span>ra</span></div>
         <div class="topbar-right">
+             <button class="topbar-btn" id="openHistoryBtn">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Saved QRs
+</button>
             <button class="topbar-btn" id="loadProfileBtn">
                 <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Profile
@@ -711,6 +715,7 @@
             </button>
             <div class="avatar" id="avatarEl">JS</div>
         </div>
+       
     </nav>
 
     <!-- Page -->
@@ -787,7 +792,7 @@
                     </div>
                     <h2>Emergency Utility</h2>
                     <p>Medical emergency profile and instant hospital access for critical situations.</p>
-                    <a class="open-btn" href="#">
+                    <a class="open-btn" href="pages/emergency.html" id="openEmergencyBtn">
                         Open utility
                         <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
@@ -807,7 +812,7 @@
                     </div>
                     <h2>Smart Parking</h2>
                     <p>Anonymous vehicle contact system — leave a note without revealing your identity.</p>
-                    <a class="open-btn" href="#">
+                    <a class="open-btn" href="#" id="openparkBtn">
                         Open utility
                         <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
@@ -968,7 +973,27 @@
             <button class="close-btn" id="closeQRBtn">Close</button>
         </div>
     </div>
+    
+    <div class="overlay" id="historyOverlay">
+    <div class="drawer">
+        <div class="drawer-handle"></div>
+        <h3>Your Saved QRs</h3>
+        <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 1.5rem;">Access previously generated QR codes and session links.</p>
 
+        <div class="activity-list" id="qrHistoryList" style="max-height: 400px; overflow-y: auto;">
+            <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 13.5px;">
+                Loading your records...
+            </div>
+        </div>
+
+        <button class="close-btn" id="closeHistoryBtn" style="margin-top: 15px;">Close</button>
+    </div>
+</div>
+
+   
+<!-- ADD THIS BEFORE YOUR MAIN SCRIPT -->
+ <script src="config.js">
+    </script>
     <script>
         const token = localStorage.getItem('token');
 
@@ -1003,7 +1028,7 @@
             overlay.classList.add('open');
 
             try {
-                const response = await fetch('http://localhost:5000/api/auth/profile', {
+                const response = await fetch(`${API}/auth/profile`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -1189,7 +1214,7 @@ document.getElementById('activateKnockBtn').addEventListener('click', async () =
     btn.disabled    = true;
 
     try {
-        const response = await fetch('http://localhost:5000/api/knockknock/create', {
+        const response = await fetch(`${API}/knockknock/create`, {
             method:  'POST',
             headers: {
                 'Content-Type':  'application/json',
@@ -1324,7 +1349,126 @@ document.getElementById('copyLinkBtn').addEventListener('click', () => {
         alert('Link copied!');
     });
 });
+/* ── Emergency Utility Routing Fix ── */
+        document.getElementById('openEmergencyBtn').addEventListener('click', (e) => {
+            e.preventDefault(); // Stops the carousel from interfering
+            window.location.href = 'pages/emergency.html'; // Forces the browser to move
+        });
+   
+    document.getElementById('openparkBtn').addEventListener('click', (e) => {
+            e.preventDefault(); // Stops the carousel from interfering
+            window.location.href = 'pages/parking.html'; // Forces the browser to move
+        });
+        /* ── QR History / Records Logic ── */
+const historyOverlay = document.getElementById('historyOverlay');
+const qrHistoryList = document.getElementById('qrHistoryList');
+
+// Open the History Drawer
+document.getElementById('openHistoryBtn').addEventListener('click', async () => {
+    historyOverlay.classList.add('open');
+    qrHistoryList.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 13px;">Fetching records...</div>`;
+
+    try {
+        // Fetch from your MongoDB qr_records collection via backend
+        const response = await fetch(`${API}/qr/history`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await response.json();
+
+        if (data.success && data.records.length > 0) {
+            qrHistoryList.innerHTML = ''; // Clear loading text
+            
+            // Generate the list UI
+            data.records.forEach(record => {
+                // Determine icon and color based on utility type
+                const isEmergency = record.utilityType === 'Emergency';
+                const colorVar = isEmergency ? 'var(--red)' : 'var(--blue)';
+                const dotClass = isEmergency ? 'red' : 'blue';
+                const date = new Date(record.createdAt).toLocaleDateString();
+
+                const itemHTML = `
+                    <div class="activity-item" style="justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 13px;">
+                            <span class="activity-dot ${dotClass}"></span>
+                            <div class="activity-info">
+                                <div class="activity-title">${record.label || record.utilityType + ' QR'}</div>
+                                <div class="activity-sub">Generated: ${date}</div>
+                            </div>
+                        </div>
+                        <button class="view-past-qr-btn" data-payload='${record.qrPayload}' data-title="${record.label}" style="padding: 6px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: ${colorVar}; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px;">
+                            View QR
+                        </button>
+                    </div>
+                `;
+                qrHistoryList.insertAdjacentHTML('beforeend', itemHTML);
+            });
+
+            // Add click listeners to the new "View QR" buttons
+            document.querySelectorAll('.view-past-qr-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const payload = e.target.getAttribute('data-payload');
+                    const title = e.target.getAttribute('data-title');
+                    openSpecificQR(payload, title);
+                });
+            });
+
+        } else {
+            qrHistoryList.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 13px;">No saved QR codes found.</div>`;
+        }
+    } catch (err) {
+        console.error("Error fetching QR history:", err);
+        qrHistoryList.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--danger); font-size: 13px;">Failed to load records.</div>`;
+    }
+});
+
+// Close the History Drawer
+document.getElementById('closeHistoryBtn').addEventListener('click', () => historyOverlay.classList.remove('open'));
+historyOverlay.addEventListener('click', e => {
+    if (e.target === historyOverlay) historyOverlay.classList.remove('open');
+});
+
+// Helper function to open a specific past QR
+function openSpecificQR(payload, title) {
+    const overlay = document.getElementById('qrOverlay');
+    const qrContainer = document.getElementById('qrPlaceholder');
+    const qrImg = document.getElementById('qrImage');
+    const downloadBtn = document.getElementById('downloadQRBtn');
+
+    // Update Modal Text
+    document.getElementById('qrModalTitle').textContent = title || "Saved QR Code";
+    document.getElementById('qrModalDesc').textContent = "Stored safely in your records.";
+
+    // Render the old QR using QRCode.js
+    qrContainer.innerHTML = '';
+    qrContainer.classList.remove('hidden');
+    qrImg.style.display = 'none'; // Hide the image tag since we are generating a canvas
+
+    new QRCode(qrContainer, {
+        text: payload,
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+    });
+
+    // Setup the download button for this specific canvas
+    downloadBtn.style.display = 'block';
+    downloadBtn.onclick = () => {
+        const canvas = qrContainer.querySelector('canvas');
+        if (canvas) {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL("image/png");
+            a.download = `${title.replace(/\s+/g, '_')}_QR.png`;
+            a.click();
+        }
+    };
+
+    // Close the history drawer and open the QR modal
+    historyOverlay.classList.remove('open');
+    overlay.classList.add('open');
+}
     </script>
-    
 </body>
 </html>

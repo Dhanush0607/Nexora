@@ -427,7 +427,8 @@
 <!-- Socket.IO -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
-<script>
+<script src="config.js"></script>
+    <script>
     /* ── Get token from URL ── */
     const urlParams    = new URLSearchParams(window.location.search);
     const sessionToken = urlParams.get('token');
@@ -468,7 +469,7 @@
 
         try {
             const response = await fetch(
-                `http://localhost:5000/api/knockknock/join/${sessionToken}`
+                `${API}/knockknock/join/${sessionToken}`
             );
             const data = await response.json();
 
@@ -518,7 +519,7 @@
             document.getElementById('localVideoPlaceholder').style.display = 'none';
 
             /* Connect to Socket.IO signaling server */
-            socket = io('http://localhost:5000');
+            socket = io(`http://${SERVER_IP}:5000`);
 
             socket.on('connect', () => {
                 console.log('Connected to signaling server');

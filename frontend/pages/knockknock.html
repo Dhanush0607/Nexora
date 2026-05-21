@@ -152,8 +152,8 @@
             </button>
         </div>
     </div>
-
-    <script>
+<script src="config.js"></script>
+    <script >
         // DOM Elements
         const statusMessage = document.getElementById('statusMessage');
         const videoWrapper = document.getElementById('videoWrapper');
@@ -182,7 +182,7 @@
         // 2. Validate Session with Backend
         async function validateSession(sessionToken) {
             try {
-                const response = await fetch(`http://localhost:5000/api/knockknock/join/${sessionToken}`);
+                const response = await fetch(`${API}/knockknock/join/${sessionToken}`);
                 const data = await response.json();
 
                 if (data.success) {
