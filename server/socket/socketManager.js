@@ -7,11 +7,15 @@ const logger           = require('../utils/logger');
 
 const initSocket = (server) => {
   const io = new Server(server, {
-    cors: {
-      origin:  process.env.CLIENT_URL || 'http://localhost:3000',
-      methods: ['GET', 'POST'],
-    },
-  });
+  cors: {
+    origin: [
+      'http://192.168.1.102:5500',
+      'http://localhost:5500',
+      'http://127.0.0.1:5500'
+    ],
+    methods: ['GET', 'POST'],
+  },
+});
 
   logger.info('Socket.IO initialized');
 

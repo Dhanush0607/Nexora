@@ -22,15 +22,15 @@ const startServer = async () => {
     await EmailService.verifyConnection(); // Check email service connection at startup
 
     // Step 3: Start server
-    server.listen(PORT, () => {
-      logger.info('─────────────────────────────────────');
-      logger.info('  NEXORA Backend Server Started!');
-      logger.info(`  Port:        ${PORT}`);
-      logger.info(`  Environment: ${process.env.NODE_ENV}`);
-      logger.info(`  URL:         http://localhost:${PORT}`);
-      logger.info(`  Health:      http://localhost:${PORT}/health`);
-      logger.info('─────────────────────────────────────');
-    });
+    server.listen(PORT, '0.0.0.0', () => {
+  logger.info('─────────────────────────────────────');
+  logger.info('  NEXORA Backend Server Started!');
+  logger.info(`  Port:        ${PORT}`);
+  logger.info(`  Environment: ${process.env.NODE_ENV}`);
+  logger.info(`  URL:         http://localhost:${PORT}`);
+  logger.info(`  Health:      http://localhost:${PORT}/health`);
+  logger.info('─────────────────────────────────────');
+});
     initSocket(server);
 
   } catch (error) {
